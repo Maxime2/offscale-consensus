@@ -1,0 +1,94 @@
+\documentclass[a4paper,11pt]{article}
+\usepackage{a4wide}
+\usepackage[british]{babel}
+\usepackage{hyperref}
+\usepackage{url}
+
+\title{Offscale's consensus algorithm}
+
+\author{Vladimir Komendantskiy}
+
+\begin{document}
+\maketitle
+
+\abstract{Using prior work on Lachesis consensus \cite{lachesis} and following informal
+  implementation notes by Offscale \cite{notes}, I am aiming at defining a gossip-inspired consensus
+  algorithm in a way amenable to incremental implementation and formal verification.}
+
+
+\section{Introduction}
+
+
+\section{Related work}
+
+Gossip-based consensus algorithms gained wide recognition thanks to cryptocurrency projects such as
+IOTA or Hashgraph \cite{hashgraph}. MaidSafe's Parsec \cite{parsec} consensus also uses a gossip
+protocol as a base layer on top of which a binary agreement protocol is used to construct a totally
+ordered list of blocks. Parsec makes weak synchrony assumptions to guarantee eventual message
+delivery.
+
+Out of all the protocols listed above, Hashgraph has received the best coverage with regards to
+formal verification \cite{hashgraph-coq} and scrutiny of the implementation
+\cite{hashgraph-fud}. This has led to the underlying directed acyclic graph (DAG) data structure
+spreading over to other algorithms \cite{parsec, lachesis}. However it should be noted that the
+choice of the same DAG data structure is not a requirement for a gossip consensus protocol. More
+specifically, even if a gossip protocol uses a DAG to store events and child-parent relations
+between those, the number of parents for non-genesis events does not have to be exactly two as in
+Hashgraph, and there can be various reasons to prefer a greater number of parents.
+
+
+\section{Model assumptions}
+
+Any protocol performs up to its theoretic assumptions. Protocols with stronger assumptions -- such
+as total message ordering and eventual delivery -- may be easier to define and prove statements
+about. When the assumptions don't hold, the statements that rely on those assumptions don't hold
+either and the protocol may exhibit arbitrary behaviour. Therefore having strong assumptions may
+help in proving statements but those statements will be weak and would cover a small number of
+cases.
+
+Offscale's consensus model assumptions are as weak as it is possible for stating protocol
+properties. In the model, I assume total asynchrony between participants: messages from a single
+sender can be reordered and an arbitrary number of messages can be dropped. Therefore a failed
+message sender is indistinguishable from a still operating message sender whose communication links
+are down. The only assumption is that a message cannot be received before being sent.
+
+A required protocol property is Byzantine fault tolerance. For a consensus network of size $N$, I
+allow the maximum theoretically possible number of Byzantine participants $t$ where $3t < N$.
+
+
+\section{Basic notions}
+
+\emph{Honest participant} is a consensus network participant adhering to the protocol.
+
+\emph{Malicious participant} is a consensus network participant exhibiting arbitrary, Byzantine behaviour.
+
+
+\begin{thebibliography}{10}
+
+  \bibitem{hashgraph} Leemon Baird. \emph{The Swirlds Hashgraph Consensus Algorithm: Fair, Fast,
+    Byzantine Fault Tolerance.} Swirlds Tech Report SWIRLDS-TR-2016-01. 2016.
+
+  \bibitem{parsec} Pierre Chevalier, Bartolomiej Kamiński, Fraser Hutchison, Qi Ma and Spandan
+    Sharma. \emph{Protocol for Asynchronous, Reliable, Secure and Efficient Consensus (PARSEC).}
+    2018. \url{https://docs.maidsafe.net/Whitepapers/pdf/PARSEC.pdf}
+
+  \bibitem{lachesis} Sang-Min Choi, Jiho Park, Quan Nguyen and Andre Cronje. \emph{Fantom: A
+    scalable framework for asynchronous distributed systems.} 8th February, 2019.
+    \url{https://github.com/SamuelMarks/consensus-rough-notes/blob/cd603414cf16526ea8e94ed341d9021eb8e0041f/papers/Fantom__A_scalable_framework_for_asynchronous_distributed_systems.pdf}
+
+  \bibitem{hashgraph-coq} Karl Crary. \emph{Hashgraph consensus aBFT proof in Coq}. 23rd October,
+    2018. \url{https://swirlds.com/downloads/hashgraph-coq.zip}
+
+  \bibitem{notes} Maxim Zakharov. \emph{Consensus schema.} 20th September,
+    2019. \url{https://github.com/SamuelMarks/consensus-rough-notes/blob/356d9d2fdf8872c23e57f65154522979f522b068/Consensus-schema.md}
+
+  \bibitem{avalanche} Team Rocket. \emph{Snowflake to Avalanche: A Novel Metastable Consensus
+    Protocol Family for Cryptocurrencies.} 16th May
+    2018. \url{https://ipfs.io/ipfs/QmUy4jh5mGNZvLkjies1RWM4YuvJh5o2FYopNPVYwrRVGV}
+
+  \bibitem{hashgraph-fud} Eric Wall. \emph{Hedera Hashgraph -- Time for some FUD}. 2nd September
+    2019.  \url{https://medium.com/@ercwl/hedera-hashgraph-time-for-some-fud-9e6653c11525}
+
+\end{thebibliography}
+
+\end{document}
