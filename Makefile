@@ -1,14 +1,24 @@
+#
+# Constants
+#
 tex = pdflatex
 src = src/offscale-consensus.tex
-doc = offscale-consensus.pdf
+pdf = doc/offscale-consensus.pdf
 
-all: $(doc)
+#
+# Targets
+#
+all: $(pdf)
 
-$(doc): $(src)
-	$(tex) $< -o $@
-	$(tex) $< -o $@ # This second pass is required for the references.
+$(pdf): $(src) output_dir
+	cd $(shell dirname $@) && \
+	$(tex) ../$< -o $(shell basename $@) && \
+	$(tex) ../$< -o $(shell basename $@) # This second pass is required for the references.
+
+output_dir:
+	mkdir -p $(shell dirname $(pdf))
 
 .PHONY: clean
 
 clean:
-	rm $(doc)
+	rm -rf $(shell dirname $(pdf))

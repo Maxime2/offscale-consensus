@@ -18,12 +18,43 @@
 
 \section{Introduction}
 
+Replicated state machines underpin blockshain technology. Blockchains whose state contains a unique
+linearly ordered chain of blocks follow replicated state machine design to achieve replication of the
+same chain across the network.
+
+It should be noted that Offscale's design is one of a \emph{blockchain} since, as Maxim Zakharov put
+it in \cite{notes} exactly, ``tasks/problems the consensus layer solves: \dots creating a
+\emph{linear order of all events} of a frame based on lamport timestamps of the events and
+synchronisation patterns''. To put the quote in context, it should be added that frames are linearly
+ordered too, hence all events that are members of complete frames are linearly ordered. Therefore an
+Offscale blockchain pursues the same fundamental goal as most existing blockchains such as Bitcoin
+or Ethereum. However the design of the replicated state machine used by such an Offscale blockchain
+is different due to choices made to address inherent problems in today's decentralised mainstream
+blockchains: low transaction rate, low transaction confirmation speed and strong synchrony
+assumptions. By increasing the rate at wich transactions can be submitted to the network, and
+submitted transactions confirmed, an Offscale blockchain aims to solve a part of the scalability
+problem which limits the use of blockchain technology to the ``store of value'' use cases, and to
+apply thus improved blockchain technology in domains that strongly rely on high thransaction
+throughput such as large-scale heterogenous computational networks commonly referred to as the
+Internet of Things. By lifting synchrony assumptions an Offscale blockchain addresses security
+concerns of synchronous protocols, Bitcoin included, which require setting an interval between
+blocks to at least the time greater than the maximum message delay on the network
+\cite{rethinking}. The minimum interval requirement poses a straightforward problem for such
+protocols: what if the expected maximum message delay does get exceeded for a majority of nodes
+making them unable to produce or receive blocks, thereby making it possibly for a minority of nodes
+construct the longest (and therefore valid) chain in the meantime? This is a possible attack vector
+on a synchronous blockchain which can be exploited by a maliciously conspiring adversary. In an
+Offscale blockchain and in an asynchronous blockchain in general, this kind of a minority adversary
+will not be able to mutate the global state because, even if the majority experiences a network
+split, a majority vote is still required in order to mutate the global state, which is why the
+minority will not be able to make progress without completely leaving the original network.
+
 
 \section{Related work}
 
 Gossip-based consensus algorithms gained wide recognition thanks to cryptocurrency projects such as
 IOTA or Hashgraph \cite{hashgraph}. MaidSafe's Parsec \cite{parsec} consensus also uses a gossip
-protocol as a base layer on top of which a binary agreement protocol is used to construct a totally
+protocol as a base layer on top of which a binary agreement protocol is used to construct a linearly
 ordered list of blocks. Parsec makes weak synchrony assumptions to guarantee eventual message
 delivery.
 
@@ -40,11 +71,11 @@ Hashgraph, and there can be various reasons to prefer a greater number of parent
 \section{Model assumptions}
 
 Any protocol performs up to its theoretic assumptions. Protocols with stronger assumptions -- such
-as total message ordering and eventual delivery -- may be easier to define and prove statements
-about. When the assumptions don't hold, the statements that rely on those assumptions don't hold
-either and the protocol may exhibit arbitrary behaviour. Therefore having strong assumptions may
-help in proving statements but those statements will be weak and would cover a small number of
-cases.
+as assumptions of linear message ordering and eventual delivery -- may be easier to define and prove
+statements about. When the assumptions don't hold, the statements that rely on those assumptions
+don't hold either and the protocol may exhibit arbitrary behaviour. Therefore having strong
+assumptions may help in proving statements but those statements will be weak and would cover a small
+number of cases.
 
 Offscale's consensus model assumptions are as weak as it is possible for stating protocol
 properties. In the model, I assume total asynchrony between participants: messages from a single
@@ -58,9 +89,10 @@ allow the maximum theoretically possible number of Byzantine participants $t$ wh
 
 \section{Basic notions}
 
-\emph{Honest participant} is a consensus network participant adhering to the protocol.
+\textbf{Honest participant} is a consensus network participant adhering to the protocol.
 
-\emph{Malicious participant} is a consensus network participant exhibiting arbitrary, Byzantine behaviour.
+\noindent
+\textbf{Malicious participant} is a consensus network participant exhibiting arbitrary, Byzantine behaviour.
 
 
 \begin{thebibliography}{10}
@@ -68,19 +100,20 @@ allow the maximum theoretically possible number of Byzantine participants $t$ wh
   \bibitem{hashgraph} Leemon Baird. \emph{The Swirlds Hashgraph Consensus Algorithm: Fair, Fast,
     Byzantine Fault Tolerance.} Swirlds Tech Report SWIRLDS-TR-2016-01. 2016.
 
-  \bibitem{parsec} Pierre Chevalier, Bartolomiej Kamiński, Fraser Hutchison, Qi Ma and Spandan
+  \bibitem{parsec} Pierre Chevalier, Bartolomiej Kamiński, Fraser Hutchison, Qi Ma, Spandan
     Sharma. \emph{Protocol for Asynchronous, Reliable, Secure and Efficient Consensus (PARSEC).}
     2018. \url{https://docs.maidsafe.net/Whitepapers/pdf/PARSEC.pdf}
 
-  \bibitem{lachesis} Sang-Min Choi, Jiho Park, Quan Nguyen and Andre Cronje. \emph{Fantom: A
-    scalable framework for asynchronous distributed systems.} 8th February, 2019.
+  \bibitem{lachesis} Sang-Min Choi, Jiho Park, Quan Nguyen, Andre Cronje. \emph{Fantom: A scalable
+    framework for asynchronous distributed systems.} 8th February, 2019.
     \url{https://github.com/SamuelMarks/consensus-rough-notes/blob/cd603414cf16526ea8e94ed341d9021eb8e0041f/papers/Fantom__A_scalable_framework_for_asynchronous_distributed_systems.pdf}
 
   \bibitem{hashgraph-coq} Karl Crary. \emph{Hashgraph consensus aBFT proof in Coq}. 23rd October,
     2018. \url{https://swirlds.com/downloads/hashgraph-coq.zip}
 
-  \bibitem{notes} Maxim Zakharov. \emph{Consensus schema.} 20th September,
-    2019. \url{https://github.com/SamuelMarks/consensus-rough-notes/blob/356d9d2fdf8872c23e57f65154522979f522b068/Consensus-schema.md}
+  \bibitem{rethinking} Rafael Pass, Elaine Shi. \emph{Rethinking Large-Scale Consensus}. 30th
+    Computer Security Foundations Symposium (CSF),
+    2017. \url{https://ieeexplore.ieee.org/document/8049715}
 
   \bibitem{avalanche} Team Rocket. \emph{Snowflake to Avalanche: A Novel Metastable Consensus
     Protocol Family for Cryptocurrencies.} 16th May
@@ -88,6 +121,9 @@ allow the maximum theoretically possible number of Byzantine participants $t$ wh
 
   \bibitem{hashgraph-fud} Eric Wall. \emph{Hedera Hashgraph -- Time for some FUD}. 2nd September
     2019.  \url{https://medium.com/@ercwl/hedera-hashgraph-time-for-some-fud-9e6653c11525}
+
+  \bibitem{notes} Maxim Zakharov. \emph{Consensus schema.} 20th September,
+    2019. \url{https://github.com/SamuelMarks/consensus-rough-notes/blob/356d9d2fdf8872c23e57f65154522979f522b068/Consensus-schema.md}
 
 \end{thebibliography}
 
