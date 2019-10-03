@@ -1,8 +1,14 @@
 \documentclass[a4paper,11pt]{article}
 \usepackage{a4wide}
+\usepackage{amsthm}
 \usepackage[british]{babel}
 \usepackage{hyperref}
 \usepackage{url}
+
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
 
 \title{Offscale's consensus algorithm}
 
@@ -44,7 +50,7 @@ protocols, Bitcoin included, which require setting an interval between blocks to
 greater than the maximum message delay on the network \cite{rethinking}. The minimum interval
 requirement poses a straightforward problem for such protocols: what if the expected maximum message
 delay does get exceeded for a majority of participants making them unable to produce or receive
-blocks, thereby making it possible for a minority of participants construct the longest (and
+blocks, thereby making it possible for a minority of participants to construct the longest (and
 therefore valid) chain in the meantime? This is an attack vector on a synchronous blockchain which
 can be exploited by a maliciously conspiring adversary. In an Offscale blockchain and in an
 asynchronous blockchain in general, this kind of a minority adversary will not be able to mutate the
@@ -131,8 +137,15 @@ property, see Section \ref{sec:assumptions}.
 \textbf{Block}: an event signed by a subset of network participants.
 
 \noindent
+\textbf{Transaction}: an opaque unit of data payload that an honest participant intends to record on
+the blockchain. In the following I assume that all transactions in the chain are unique. However it
+is possible to a participant to submit a transaction multiple times, for example, when this
+transaction is orphaned.
+
+\noindent
 \textbf{Gossip event}, or simply \textbf{event}: a data structure containing information that a
-participant wants to pass to other participants.
+participant wants to pass to other participants, for example, a transaction or an overlay protocol
+message to other participants.
 
 \noindent
 \textbf{Gossip graph}: a graph data structure with nodes being gossip events and with edges being
@@ -190,8 +203,8 @@ for all participants.
 A gossip event that is neither famous nor both an ancestor of some famous event $E_{m+1}$ and a
 descendant of the famous event $E_m$ is called \emph{orphaned}. Orphaned events may contain
 transactions that did not make it to the chain. Orphaned events can be pruned from the gossip graph
-without consensus if there are not going to be any new children or parents added to it. It is up to
-the creator of an orphaned event to create a new event with the transactions from the orphaned
+without consensus if there are not going to be any new children or parents added to them. It is up
+to the creator of an orphaned event to create a new event with the transactions from the orphaned
 event, or to treat those transactions as cancelled.
 
 
@@ -250,6 +263,46 @@ way that on-graph consensus results get appended to blocks.
 
 \section{Security properties}\label{sec:security}
 
+In the propositions below, all eventual properties are stated modulo changes in the participant
+membership set. For a property to eventually hold for all honest participants it means that at some
+logical point in any possible continuation of the protocol execution, which may not necessarily
+happen at the same time for each of the participants, the given property holds for all honest
+participants that are members of the protocol at that logical point.
+
+\begin{lemma}[Agreement]\label{lem:agreement}
+  If the payload of an event appears in the $n$-th block of some honest participant's chain, for
+  some $n$, it also eventually appears in the $n$-th block of every other honest participants'
+  chains.
+\end{lemma}
+
+\begin{lemma}[Unique ordering]\label{lem:ordering}
+  There is a unique ordering of event payload within every block.
+\end{lemma}
+
+The consistency property follows from Lemmas \ref{lem:agreement} and \ref{lem:ordering}.
+\begin{theorem}[Consistency]
+  At any point in the execution, any two honest participants have consistent chains. That is, either
+  both their chains are identical, or one is a prefix of the other.
+\end{theorem}
+
+While a stronger liveness property does not hold as I noted in \ref{sec:assumptions}, there is a
+weaker property which can be called \emph{censorship resilience} which applies not to the whole
+gossip graph but only to the chain.
+\begin{lemma}[Censorship resilience]
+  If an event appears in the gossip graph of at least $N - t$ honest participants then its payload
+  eventually appears in the chains of all honest participants.
+\end{lemma}
+
+\begin{theorem}[Byzantine fault-tolerant chain construction]
+  The protocol constructing the blockchain ensures the following properties of a BFT protocol:
+  \begin{itemize}
+  \item Validity: If an event is referred to in an honest participant's chain then it was created by
+    an honest participant.
+  \item Byzantine agreement: If an honest participant's chain refers to an event then all honest
+    participants' chains eventually refer to that event.
+  \item Integrity: Honest participants never change blocks after appending them to their chains.
+  \end{itemize}
+\end{theorem}
 
 
 \begin{thebibliography}{10}
