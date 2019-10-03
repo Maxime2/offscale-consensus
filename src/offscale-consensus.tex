@@ -142,7 +142,8 @@ are required to preserve this property.
 
 \noindent
 \textbf{Child-parent relation}: a directed acyclic relation between nodes in the gossip graph
-connecting events to earlier events that led up to them.
+connecting events to earlier events that led up to them. Ancestors and descendants are defined as
+transitive closures of the notions of parent and child respectively.
 
 \noindent
 \textbf{Genesis event}: a gossip event which is the unique root of the gossip graph. It is the same
@@ -151,22 +152,25 @@ across all honest participants.
 \noindent
 \textbf{Famous event}: a unique event in the gossip graph selected by honest participants according
 to a secure protocol which is protected from malicious participants, for example, using a verifiable
-delay function or Byzantine binary agreement.
+delay function or Byzantine binary agreement. The genesis event is the first famous event.
 
 
 \section{Overview of the protocol}
 
 In the overview below I provide a conceptual presentation of the protocol with minimal details about
-how the protocol might be designed at the functional level. Detailed designs may vary widely in the
-degree of optimisations or sophistication.
+how the protocol might be designed at the functional level. As a result, the description is largely
+propositional and non-constructive, which however allows to draft security properties in Section
+\ref{sec:security}. Detailed, constructive designs may vary widely in the degree of optimisations or
+sophistication.
 
-A protocol instance, run by an honest participant, alternates between three tasks indefinitely,
-starting from a genesis event:
+A protocol instance, run by an honest participant, alternates between the following tasks
+indefinitely, starting from a genesis event:
 
 \begin{enumerate}
 \item Add any pending blocks to the chain.
 \item Add pending transactions if there are any as a new event in the gossip graph.
 \item Synchronise the gossip graph with another participant chosen at random.
+\item Apply participant set membership changes.
 \end{enumerate}
 
 
@@ -178,10 +182,17 @@ unique block $B_n$ that is added to the blockchain. Round $n$ is complete when a
 event $E_{n+1}$ is computed by honest participants according to the protocol. That new unique famous
 event $E_{n+1}$ marks the start of the next round $n + 1$. The new block is then formed from the
 transactions contained in the famous event $E_n$ at the start of the current round and from gossip
-events that are both children of $E_n$ and ancestors of $E_{n+1}$, not including the event $E_{n+1}$
-itself. Those transactions are linearly ordered locally by each honest participant using only the
-information in the events of those transactions and rules of the protocol that are the same for all
-participants.
+events that are both descendants of $E_n$ and ancestors of $E_{n+1}$, not including the event
+$E_{n+1}$ itself. Those transactions are linearly ordered locally by each honest participant using
+only the information in the events of those transactions and rules of the protocol that are the same
+for all participants.
+
+A gossip event that is neither famous nor both an ancestor of some famous event $E_{m+1}$ and a
+descendant of the famous event $E_m$ is called \emph{orphaned}. Orphaned events may contain
+transactions that did not make it to the chain. Orphaned events can be pruned from the gossip graph
+without consensus if there are not going to be any new children or parents added to it. It is up to
+the creator of an orphaned event to create a new event with the transactions from the orphaned
+event, or to treat those transactions as cancelled.
 
 
 \subsection{Adding new transactions to the gossip graph}
@@ -194,12 +205,51 @@ the last event created by the participant as one of its parents.
 
 \subsection{Synchronisation of the gossip graph}
 
-Participants make and receive randomised synchronisation requests. Requests themselves are events in
-the gossip graph, as well as actions of receiving a request. A request receipt is related to the
-request by the child-parent relation. Creating a request receipt is followed by creating a
-syncronisation response event by the receiving participant, making the receipt event one of the
-parents of the synchronisation response event, and sending a gossip graph update to the sender of
-the request.
+Participants make synchronisation requests to random participants in their network membership sets,
+and receive similar requests from other participants. Requests themselves are events in the gossip
+graph, as well as actions of receiving a request. A request receipt is related to the request by the
+child-parent relation. Creating a request receipt is followed by creating a syncronisation response
+event by the receiving participant, making the receipt event one of the parents of the
+synchronisation response event, and sending a gossip graph update to the sender of the request.
+
+
+\subsection{Changing participant set membership}
+
+The protocol allows for participants to enter and leave at any point in its operation. Participants
+that become inactive are pruned from the membership list.
+
+For a new candidate participant with no inconsistent state to enter the distributed set of
+participants, that candidate participant has to announce themselves by making synchronisation
+requests. In response to those synchronisation requests, the new participant receives the gossip
+graph so far from the current members of the protocol network. Other honest participants that
+observe those synchronisation requests from the new member in the gossip graph, add the new
+participant to their membership sets.
+
+Alternatively to adding the new member without consent from other members, the addition of the
+candidate participant to the membership set can be postponed until existing members reach consensus
+--- e.g., by running Byzantine binary agreement within the gossip graph --- on the fact that the the
+candidate participant has received a significant prefix of the gossip graph. This alternative can be
+useful when the size of the gossip graph is too big relative to the network throughput, and so the
+graph must be split in possibly overlapping parts and those parts can be communicated by different
+recipients of synchronisation requests from the candidate participant. This alternative also
+guarantees that the set membership change is recorded in the gossip graph. It does not however
+guarantee that the change is recorded in the chain. The latter should be guaranteed by the famous
+event selection protocol.
+
+In a network that makes progress --- that is, generates new gossip events and blocks --- the
+simplest way for a participant to leave the network is to stop communicating with it. Other honest
+participants that observe the absence of responses to synchronisation requests sent to that
+participant, remove it from their membership sets.
+
+To make premature removal less likely, the members that observe the absense of synchronisation
+request responses can initiate a round of consensus within the gossip graph to record the
+removal. As well as in new participant addition, to guarantee that participant removal is recorded
+in the chain, the famous event selection protocol should always select the famous event in such a
+way that on-graph consensus results get appended to blocks.
+
+
+\section{Security properties}\label{sec:security}
+
 
 
 \begin{thebibliography}{10}
